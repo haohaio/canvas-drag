@@ -58,6 +58,7 @@ export default class DragCanvas extends Vue {
 
     // 最后绘制选中的多边形
     this.drawPolygon(this.selectPoints, this.activeIndex)
+    this.drawSmallRects()
   }
 
   drawPolygon(points: Array<any>, index: number) {
@@ -80,6 +81,14 @@ export default class DragCanvas extends Vue {
     this.ctx.stroke()
     this.ctx.fillStyle = AreaTypeColor[index].fillColor
     this.ctx.fill()
+  }
+
+  drawSmallRects() {
+    this.selectPoints.forEach((point: any) => {
+      this.ctx.strokeStyle = 'white'
+      this.ctx.lineWidth = 2
+      this.ctx.strokeRect(point.x, point.y, 10, 10)
+    })
   }
 }
 </script>
