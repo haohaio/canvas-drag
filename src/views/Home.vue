@@ -306,7 +306,7 @@ export default class extends Vue {
     }
 
     .area-list {
-      width: 400px;
+      width: 30%;
 
       /deep/.el-table thead tr th {
         background: #eff8ff;
