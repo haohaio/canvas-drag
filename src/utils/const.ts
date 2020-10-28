@@ -1,4 +1,9 @@
-export const AreaTypeColor: Array<object> = [
+interface CanvasColor {
+  strokeColor: string;
+  fillColor: string;
+}
+
+export const AreaTypeColor: Array<CanvasColor> = [
   {
     strokeColor: 'rgb(24,144,255)',
     fillColor: 'rgba(24,144,255, .2)'

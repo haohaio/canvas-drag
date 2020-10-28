@@ -7,27 +7,34 @@
       </section>
 
       <section class="main">
-        <div class="drag-canvas" ref="canvas"></div>
-        <div class="area-list">
+        <header>
           <el-button class="add-btn" type="primary" size="small" @click="handleAdd">新增区域</el-button>
-          <el-table ref="areaTable" :data="areaList" @row-click="chooseRow" :row-class-name="setRowIndex" highlight-current-row>
-            <el-table-column label="区域名称">
-              <template slot-scope="scope">
-                <span :style="{color: areaTypeColor[scope.$index].strokeColor}">{{ scope.row.name }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="启用">
-              <template slot-scope="scope">
-                <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作">
-              <template slot-scope="scope">
-                <el-button type="text" @click="handleEdit(scope.row, scope.$index)">编辑</el-button>
-                <el-button type="text" style="color: #F56C6C" @click="handleDelete(scope.$index)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+        </header>
+        <div class="content-wrapper">
+          <div class="drag-canvas" ref="canvasArea">
+            <drag-canvas :width="canvasWidth" :height="canvasHeight" v-model="allPoints" :active-index="activeIndex"></drag-canvas>
+          </div>
+
+          <div class="area-list">
+            <el-table ref="areaTable" :data="areaList" @row-click="chooseRow" :row-class-name="setRowIndex" highlight-current-row>
+              <el-table-column label="区域名称">
+                <template slot-scope="scope">
+                  <span :style="{color: areaTypeColor[scope.$index].strokeColor}">{{ scope.row.name }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="启用">
+                <template slot-scope="scope">
+                  <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作">
+                <template slot-scope="scope">
+                  <el-button type="text" @click="handleEdit(scope.row, scope.$index)">编辑</el-button>
+                  <el-button type="text" style="color: #F56C6C" @click="handleDelete(scope.$index)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
         </div>
       </section>
     </el-card>
@@ -48,16 +55,16 @@
 </template>
 
 <script lang="ts">
-import HelloWorld from '@/components/HelloWorld.vue'
-import { Component, Vue } from 'vue-property-decorator'
+import { Component, Vue, Watch } from 'vue-property-decorator'
 import { AreaTypeColor } from '@/utils/const'
 import { ElForm } from 'element-ui/types/form'
 import { ElTable } from 'element-ui/types/table'
+import DragCanvas from '@/components/DragCanvas.vue'
 
 @Component({
   name: 'Home',
   components: {
-    HelloWorld
+    DragCanvas
   }
 })
 export default class extends Vue {
@@ -78,10 +85,29 @@ export default class extends Vue {
     edit: '编辑区域'
   }
   dialogType = 'add' // add/edit
-  selectIndex = 0
+  activeIndex = 0
+  allPoints: Array<any> = []
+
+  @Watch('areaList')
+  onAreaListChanged(newValue: Array<any>) {
+    const allPoints: Array<any> = []
+    newValue.forEach((area: any) => {
+      allPoints.push(this.ratioToPoints(area.points))
+    })
+
+    this.allPoints = allPoints
+  }
 
   mounted() {
+    this.init()
     this.setMockData()
+    this.setDefaultPoints()
+  }
+
+  init() {
+    const canvasArea = this.$refs.canvasArea as Element
+    this.canvasWidth = canvasArea.clientWidth
+    this.canvasHeight = this.canvasWidth / 1.8
   }
 
   setMockData() {
@@ -162,7 +188,7 @@ export default class extends Vue {
   }
   // 由于 row-click 方法中未返回 rowIndex 字段，需要通过绑定 row-class-name 时设置 index
   chooseRow(row: any, column: any, event: any) {
-    this.selectIndex = event.currentTarget.className.split(':')[1]
+    this.activeIndex = Number(event.currentTarget.className.split(':')[1])
   }
 
   setRowIndex({ row, rowIndex }: any) {
@@ -196,11 +222,12 @@ export default class extends Vue {
       if (this.dialogType === 'add') {
         const area = {
           ...this.areaForm,
-          status: 1
+          status: 1,
+          points: this.pointsToRadio(this.defaultPoints)
         }
         this.areaList.push(area)
       } else {
-        this.areaList[this.selectIndex].name = this.areaForm.name
+        this.areaList[this.activeIndex].name = this.areaForm.name
       }
 
       this.dialogVisible = false
@@ -219,11 +246,35 @@ export default class extends Vue {
       center: true
     })
       .then(async () => {
-        this.areaList.splice(this.selectIndex, 1)
+        this.areaList.splice(this.activeIndex, 1)
         this.$message.success('删除成功!')
       })
       .catch(err => console.log(err))
     console.log(this.areaList)
+  }
+
+  ratioToPoints(ratios: Array<any>) {
+    const points: Array<any> = []
+    ratios.forEach(radio => {
+      points.push({
+        x: this.canvasWidth * radio.xRatio,
+        y: this.canvasHeight * radio.yRatio
+      })
+    })
+
+    return points
+  }
+
+  pointsToRadio(points: Array<any>) {
+    const radios: Array<any> = []
+    points.forEach(point => {
+      radios.push({
+        xRatio: +(point.x / this.canvasWidth).toFixed(2),
+        yRatio: +(point.y / this.canvasHeight).toFixed(2)
+      })
+    })
+
+    return radios
   }
 }
 </script>
@@ -240,23 +291,27 @@ export default class extends Vue {
 }
 
 .main {
-  display: flex;
-
-  .drag-canvas {
-    flex: 1;
+  header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
   }
 
-  .area-list {
-    width: 400px;
+  .content-wrapper {
+    display: flex;
 
-    .add-btn {
-      float: right;
-      margin-bottom: 20px;
+    .drag-canvas {
+      flex: 1;
+      margin-right: 20px;
     }
 
-    /deep/.el-table thead tr th {
-      background: #eff8ff;
-      color: #666;
+    .area-list {
+      width: 400px;
+
+      /deep/.el-table thead tr th {
+        background: #eff8ff;
+        color: #666;
+      }
     }
   }
 }
