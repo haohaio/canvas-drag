@@ -49,8 +49,6 @@ export default class DragCanvas extends Vue {
 
     // 绘制多边形
     this.allPoints.forEach((points: Array<any>, index: number) => {
-      console.log('this.activeIndex', this.activeIndex)
-      console.log('this.index', index)
       if (index === this.activeIndex) {
         this.selectPoints = points
       } else {

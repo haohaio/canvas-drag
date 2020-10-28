@@ -59,12 +59,12 @@ import { Component, Vue, Watch } from 'vue-property-decorator'
 import { AreaTypeColor } from '@/utils/const'
 import { ElForm } from 'element-ui/types/form'
 import { ElTable } from 'element-ui/types/table'
-import DragCanvas from '@/components/DragCanvas.vue'
 
 @Component({
   name: 'Home',
   components: {
-    DragCanvas
+    // 由于需要在子组件内获取 width 和 height 这里必须使用异步组件，避免获取到的 width 和 height 为 0
+    DragCanvas: () => import('@/components/DragCanvas.vue')
   }
 })
 export default class extends Vue {
