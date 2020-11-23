@@ -1,5 +1,5 @@
 <template>
-  <canvas id="drag-canvas" :width="width" :height="height"></canvas>
+  <canvas id="drag-canvas" :width="width" :height="height" />
 </template>
 
 <script lang="ts">
@@ -25,6 +25,7 @@ export default class DragCanvas extends Vue {
   get allPoints() {
     return this.value
   }
+
   @Watch('allPoints', { deep: true })
   onAllPointsChanged(newValue: Array<any>) {
     this.$emit('input', newValue)
@@ -52,6 +53,7 @@ export default class DragCanvas extends Vue {
     document.onmouseup = this.mouseupEvent.bind(this)
     this.canvas.onmousemove = this.mousemoveEvent.bind(this)
   }
+
   unbindEvent() {
     this.canvas.onmousedown = null
     document.onmouseup = null
